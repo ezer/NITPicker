@@ -13,4 +13,5 @@ Description: Given a few examples of experiments over a time (or spatial) course
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-Depends: fdasrvf, fda, dplyr, ggplot2, ggpubr, fda.usc, gridBase
+Depends: fdasrvf, fda, dplyr, ggplot2, grid, ggpubr, fda.usc, gridBase
+RoxygenNote: 6.0.1
