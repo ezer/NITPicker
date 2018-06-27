@@ -16,7 +16,7 @@
 
 
 testBerkeley<-function(){
-
+    #library(NITPicker)
     #boy growth rates
     mat=growth$hgtm
     xVals=growth$age
@@ -91,7 +91,7 @@ testBerkeley<-function(){
     generated2=generatePerturbations(mat, tp, spline=1, numPert=2000)
     diff=generated1$ft-generated2$ft
 
-    plot(c(), xlim=c(min(xVals), max(xVals)),
+    plot(c(), xlim=c(min(diff), max(diff)),
          ylim=c(0, 30),
          xlab='age', ylab='growth rate (sampled)')
     for(i in c(1:100)){
@@ -100,14 +100,14 @@ testBerkeley<-function(){
     for(i in c(1:100)){
         lines(generated2$time, generated2$ft[,i], col='darkblue')
     }
-    plot(c(), xlim=c(min(xVals), max(xVals)),
-         ylim=c(0, 30),
+    plot(c(), xlim=c(min(generated1$time), max(generated1$time)),
+         ylim=c(-10, 10),
          xlab='age', ylab='growth rate (sampled)')
     variances=apply(diff, 1, function(i){var(i)})
     print(length(variances))
     for(i in c(1:1000)){
         # print(length(generated$ft[,i]))
-        lines(generated$time, (diff[,i]*diff[,i])/variances, col=rgb(0.1, 0.1, 0.1, 0.01))
+        lines(generated1$time, (diff[,i])/sqrt(variances), col=rgb(0.1, 0.1, 0.1, 0.01))
     }
 
     plot(c(), xlim=c(min(xVals), max(xVals)),
@@ -117,42 +117,50 @@ testBerkeley<-function(){
     print(length(variances))
     for(i in c(1:1000)){
         # print(length(generated$ft[,i]))
-        lines(tp, approx(generated$time, y=(diff[,i]*diff[,i])/variances, xout=tp)$y, col=rgb(0.1, 0.1, 0.1, 0.1))
+        lines(tp, approx(generated$time, y=(diff[,i])/sqrt(variances), xout=tp)$y, col=rgb(0.1, 0.1, 0.1, 0.1))
     }
 
 
     #input this, sampled at the original time points, into F1
     tp=xVals[2:length(xVals)]
     set.seed(123)
-    sapply(c(1:30), function(sam){
-        mat=rateGirl
-        subset1=sample(1:length(mat[1,]), 0.5*length(mat[1,]))
-        generated1=generatePerturbations(mat[,subset1], tp, spline=1, numPert=2000)
+    sapply(c(1:50), function(sam){
+        
+        mat1=rateGirl
+        subset1=sample(1:length(mat1[1,]), 0.5*length(mat1[1,]))
+        
+        mat2=rateBoy
+        subset2=sample(1:length(mat2[1,]), 0.5*length(mat2[1,]))
+        
+    
+        b=findPathF3(tp, mat1[,subset1], mat2[,subset2], 5, spline=1, numPerts=1000, fast=T)
+        
+        # mat=rateGirl
+        # subset1=sample(1:length(mat[1,]), 0.5*length(mat[1,]))
+        # generated1=generatePerturbations(mat[,subset1], tp, spline=1, numPert=2000)
+        # 
+        # # generated2=generatePerturbations(mat[,subset2], tp, spline=1, numPert=2000)
+        # diff=generated1$ft-generated2$ft
+        # print('calculated diff')
+        # variances=apply(diff, 1, function(i){var(i)})
+        # print('calculated var')
+        # mat=sapply(c(1:100), function(k){
+        #     # print(length(generated$ft[,i]))
+        #     approx(generated1$time, y=(diff[,k]*diff[,k])/(variances*2000), xout=tp)$y
+        # })
+        # 
+        # 
+        # 
+        # b=findPath(tp, rep(0, length(tp)), mat, 5, 1, numPerts=20, multiple=F)
 
-        mat=rateBoy
-        subset2=sample(1:length(mat[1,]), 0.5*length(mat[1,]))
-        generated2=generatePerturbations(mat[,subset2], tp, spline=1, numPert=2000)
-        diff=generated1$ft-generated2$ft
-        print('calculated diff')
-        variances=apply(diff, 1, function(i){var(i)})
-        print('calculated var')
-        mat=sapply(c(1:100), function(k){
-            # print(length(generated$ft[,i]))
-            approx(generated1$time, y=(diff[,k]*diff[,k])/(variances*2000), xout=tp)$y
-        })
-
-
-
-        b=findPath(tp, rep(0, length(tp)), mat, 5, 1, numPerts=20, multiple=F)
-
-        plot(c(), xlim=c(min(xVals), max(xVals)),
-             ylim=c(0, 30),
-             xlab='age', ylab='growth rate (sampled)')
-        for(i in c(1:100)){
-            # print(length(generated$ft[,i]))
-            lines(tp, mat[,i], col=rgb(0.1, 0.1, 0.1, 0.1))
-        }
-        abline(v=tp[b])
+        # plot(c(), xlim=c(min(xVals), max(xVals)),
+        #      ylim=c(0, 30),
+        #      xlab='age', ylab='growth rate (sampled)')
+        # for(i in c(1:100)){
+        #     # print(length(generated$ft[,i]))
+        #     lines(tp, mat1[,i], col=rgb(0.1, 0.1, 0.1, 0.1))
+        # }
+        # abline(v=tp[b])
 
         write.table(b, file=paste('selection_berkeleyDispersion', sam, '.txt', sep=''))
         write.table(subset1, file=paste('subset1_berkeleyDispersion', sam, '.txt', sep=''))
@@ -163,17 +171,17 @@ testBerkeley<-function(){
 
 
     #draw an example
-    sampledPoints=sapply(c(1:30), function(sam){
+    sampledPoints=sapply(c(1:50), function(sam){
         read.table(paste('selection_berkeleyDispersion', sam, '.txt', sep=''))[,1]
 
     })
 
-    sampledCurves1=sapply(c(1:30), function(sam){
+    sampledCurves1=sapply(c(1:50), function(sam){
         read.table(paste('subset1_berkeleyDispersion', sam, '.txt', sep=''))[,1]
 
     })
 
-    sampledCurves2=sapply(c(1:30), function(sam){
+    sampledCurves2=sapply(c(1:50), function(sam){
         read.table(paste('subset2_berkeleyDispersion', sam, '.txt', sep=''))[,1]
 
     })
@@ -249,7 +257,7 @@ testBerkeley<-function(){
 
 
 
-    pdf(paste("Figure_growthRate.pdf", sep=""), width=8, height=6.6,pointsize = 12)
+    pdf(paste("Figure_growthRate2.pdf", sep=""), width=8, height=6.6,pointsize = 12)
     par(mfrow=c(2,2));
     par(mar=c(4, 4, 1, 1)+0.1);
     par(cex=0.9)
@@ -258,7 +266,7 @@ testBerkeley<-function(){
 
     #################plot original curves with lines indicated
     sam=1
-    cols=sampledCurves[,sam]
+    cols=sampledCurves1[,sam]
     mat=rateGirl
     matTest=mat[,which(!(c(1:length(mat[1,])) %in% cols))]
     plot(c(), xlim=c(1, max(tp)), ylim=c(min(mat), max(mat)), xlab='age (yrs)', ylab='growth rate (cm/yr)')
@@ -300,13 +308,13 @@ testBerkeley<-function(){
     diff=generated1$ft-generated2$ft
 
     plot(c(), xlim=c(min(xVals), max(xVals)),
-         ylim=c(0, 30),
+         ylim=c(-10, 10),
          xlab='age (yrs)', ylab='inverse coefficient of variation - sampled')
     variances=apply(diff, 1, function(i){var(i)})
     print(length(variances))
     for(i in c(1:1000)){
         # print(length(generated$ft[,i]))
-        lines(tp, approx(generated1$time, y=(diff[,i]*diff[,i])/variances, xout=tp)$y, col=rgb(0, 0.5, 0, 0.1))
+        lines(tp, approx(generated1$time, y=(diff[,i])/sqrt(variances), xout=tp)$y, col=rgb(0, 0.5, 0, 0.1))
 
     }
     abline(v=tp[sampledPoints[,1]])
@@ -323,12 +331,15 @@ testBerkeley<-function(){
 }
 
 testCanada <-function(){
+    #library(NITPicker)
+    library(gridBase)
+    library(grid)
     set.seed(987)
     mat=CanadianWeather$monthlyTemp
 
     sapply(c(1:10), function(sam){
         subset=sample(1:length(mat[1,]), 0.5*length(mat[1,]))
-        b=findPath(c(1:length(mat[,'Resolute'])), mat[,'Resolute'], mat[,subset], 5, 1, numPerts=10, multiple=F)
+        b=findPathF2(c(1:length(mat[,'Resolute'])), mat[,'Resolute'], mat[,subset], 5, spline=1, numPerts=1000)
         write.table(b, file=paste('canadaSelection_monthly', sam, '.txt', sep=''))
         write.table(subset, file=paste('canadaSubset_monthly', sam, '.txt', sep=''))
         plot(mat[,'Resolute'], type='l')
@@ -586,10 +597,17 @@ testPerturb <-function(){
 
 }
 
+grab_grob <- function(){
+    grid.echo()
+    grid.grab()
+}
+
 drawSurveyBasicAnalysisFigures<-function(){
+    library(gridGraphics) 
+    library(grid)
+    library(glmnet)
     
-    
-    ###########draw stats about survey
+    ###########draw stats about survey#######################
     survey=read.table("surveyData_nov_1_2017.txt", sep="\t", header=T)[,1:50]
     pdf(paste("Figure_nitpicker_pieChart_level.pdf", sep=""), width=3.5, height=3,pointsize = 10)
     par(mfrow=c(1,1));
@@ -629,22 +647,24 @@ drawSurveyBasicAnalysisFigures<-function(){
     # heatmap.2(apply(survey[,strategies[1:6]], c(1,2), function(i){as.numeric(substring(as.character(i),1,1))}), scale="none", col='bluered', trace="none")
     a=apply(survey[,strategies[1:6]], c(1,2), function(i){as.numeric(substring(as.character(i),1,1))})
     
-    pdf(paste("Figure_nitpicker_heatmap_strategiesCorrelation.pdf", sep=""), width=5, height=5, pointsize = 10)
-    par(mfrow=c(1,1));
+    # pdf(paste("Figure_nitpicker_heatmap_strategiesCorrelation.pdf", sep=""), width=5, height=5, pointsize = 10)
+    # #par(mfrow=c(1,1));
+    # 
+    # par(mar=c(30, 30, 12, 12)+0.1);
+    # #par(cex=0.1)
+    # temp=sapply(strategies[1:6], function(i){sapply(strategies[1:6], function(j){
+    #     cor(a[,i], a[,j])
+    # })})
+    # colnames(temp)=c('peak expression', 'far apart', 'evenly spaced', 'largest perturbation', 'greatest slope', 'multiple genes expressed')
+    # rownames(temp)=c('peak expression', 'far apart', 'evenly spaced', 'largest perturbation', 'greatest slope', 'multiple genes expressed')
+    # 
+    # heatmap.2(temp, scale="none", col='bluered', trace="none", symm=T, margins=c(16,16), key.title='Key', denscol='black', key.xlab='correlation')
+    # dev.off()
+   
     
-    par(mar=c(30, 30, 12, 12)+0.1);
-    par(cex=0.1)
-    temp=sapply(strategies[1:6], function(i){sapply(strategies[1:6], function(j){
-        cor(a[,i], a[,j])
-    })})
-    colnames(temp)=c('peak expression', 'far apart', 'evenly spaced', 'largest perturbation', 'greatest slope', 'multiple genes expressed')
-    rownames(temp)=c('peak expression', 'far apart', 'evenly spaced', 'largest perturbation', 'greatest slope', 'multiple genes expressed')
-    
-    heatmap.2(temp, scale="none", col='bluered', trace="none", symm=T, margins=c(16,16), key.title='Key', denscol='black', key.xlab='correlation')
-    dev.off()
-    ###############what points did people suggest?
     
     
+     ###############what points did people suggest?
     freqTP_withGrant=sapply(c(1:4), function(i){
         sapply(c(1:26), function(j){
             length(which(survey[,paste("Q", i, "T", c(1:10), sep="")]==j))
@@ -691,7 +711,7 @@ drawSurveyBasicAnalysisFigures<-function(){
     
     
     plot(c(), xlim=c(0,26), ylim=c(-0.3, 0.3))
-    ###generate a lot of perturbations, subtract from control
+    ########generate a lot of perturbations, subtract from control
     meanPerturbations=sapply(c(1:4), function(geneID){
         
         pertAll=generatePerturbations(meanPlotsTransposed[[geneID]], c(1:26), numPert=10000, spline=1)
@@ -712,7 +732,7 @@ drawSurveyBasicAnalysisFigures<-function(){
         apply(temp, 1, function(i){ mean(i)})
         
     })
-    b=findPath(c(1:26), rep(0,26), meanPerturbations, 5, 1, multiple=F, type=1, numPerts=10, resampleTraining = F)
+    b=findPathF1(c(1:26), meanPerturbations, 5, 1, numPerts=1000, resampleTraining = F)
     
     #b=findPath(c(1:26), t(y1), meanPlotsTransposed, 5, 1, multiple=T, type=1, numPerts=10)
     
@@ -757,7 +777,7 @@ drawSurveyBasicAnalysisFigures<-function(){
     
     
     
-    ################
+    #################
     set.seed(123)
     meanPlots=lapply(c(1:4), function(geneID){
         perturbations[["mean"]][which(perturbations[["mean"]][,"GeneID"]==geneID),c(3:length(perturbations[["mean"]][1,]))]
@@ -772,7 +792,7 @@ drawSurveyBasicAnalysisFigures<-function(){
         mat, quote=F, row.names = F, file='surveyData.txt')
     
     
-    
+    set.seed(123)
     ####combine these into a table for doing F1:
     y1=sapply(meanPlots, function(i){i[1,]})
     meanPlotsTransposed=lapply(meanPlots, function(i){
@@ -797,32 +817,33 @@ drawSurveyBasicAnalysisFigures<-function(){
     
     
     meanPerturbations=sapply(c(1:4), function(geneID){
-        
+
         pertAll=generatePerturbations(meanPlotsTransposed[[geneID]], c(1:26), numPert=10000, spline=1)
         pert=pertAll$ft
         tim=pertAll$time
         temp=apply(pert, 2, function(i){
-            
+
             ap=approx(tim, i, xout=c(1:26))
-            
+
             ap$y-meanPlotsTransposed[[geneID]][,1]
             #plot(c(), xlim=c(0,26), ylim=c(-0.3, 0.3))
             lines(c(1:26), ap$y-meanPlotsTransposed[[geneID]][,1], col=rgb(0.1,0.1,0.1,0.03))
             ap$y-meanPlotsTransposed[[geneID]][,1]
         })
         #print(dim(temp))
-        
-        
+
+
         apply(temp, 1, function(i){ mean(i)})
-        
+
     })
     
-    y1=matrix(rep(0, 26*4), nrow=26, ncol=4)
+    #y1=matrix(rep(0, 26*4), nrow=26, ncol=4)
     #b=findPath(c(1:length(meanPlots[[1]][1,])), t(y1), meanPlotsTransposed, 5, 1, multiple=T, type=1, numPerts=10)
-    
-    #b=findPath(c(1:length(meanPlots[[1]][1,])), meanPlots[[1]][1,], t(meanPlots[[1]]), 5, 1, multiple=F, type=1, numPerts=10)
-    b_mean10=findPath(c(1:26), rep(0,26), meanPerturbations, 10, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
-    b_mean5=findPath(c(1:26), rep(0,26), meanPerturbations, 5, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
+    y_together=cbind(meanPlotsTransposed[[1]][,1], meanPlotsTransposed[[2]][,1], meanPlotsTransposed[[3]][,1], meanPlotsTransposed[[4]][,1])
+    b_mean10=findPathF2(c(1:26), y_together, meanPlotsTransposed, 10, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+    b_mean5=findPathF2(c(1:26), y_together, meanPlotsTransposed, 5, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+
+        #findPathF2(c(1:26), meanPerturbations, 5, spline=1, numPerts=0, resampleTraining = F)
     
     #b=findPath(c(1:26), rep(0,26), meanPerturbations, 10, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
     
@@ -904,13 +925,19 @@ drawSurveyBasicAnalysisFigures<-function(){
         
     })
     
-    y1=matrix(rep(0, 26*4), nrow=26, ncol=4)
+    #y1=matrix(rep(0, 26*4), nrow=26, ncol=4)
     #b=findPath(c(1:length(stdevPlots[[1]][1,])), t(y1), stdevPlotsTransposed, 5, 1, multiple=T, type=1, numPerts=10)
     
     #b=findPath(c(1:length(stdevPlots[[1]][1,])), stdevPlots[[1]][1,], t(stdevPlots[[1]]), 5, 1, multiple=F, type=1, numPerts=10)
     
-    b_stdev10=findPath(c(1:26), rep(0,26), stdevPerturbations, 10, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
-    b_stdev5=findPath(c(1:26), rep(0,26), stdevPerturbations, 5, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
+    y_together=cbind(stdevPlotsTransposed[[1]][,1], stdevPlotsTransposed[[2]][,1], stdevPlotsTransposed[[3]][,1], stdevPlotsTransposed[[4]][,1])
+    b_stdev10=findPathF2(c(1:26), y_together, stdevPlotsTransposed, 10, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+    b_stdev5=findPathF2(c(1:26), y_together, stdevPlotsTransposed, 5, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+    
+    
+    
+    #b_stdev10=findPathF1(c(1:26), stdevPerturbations, 10, spline=1, numPerts=0, resampleTraining = F)
+    #b_stdev5=findPathF1(c(1:26), stdevPerturbations, 5, spline=1, numPerts=0, resampleTraining = F)
     
     plot(c(), xlim=c(0,26), ylim=c(-0.15, 0.15))
     apply(stdevPerturbations, 2, function(i){lines(c(1:26), i)})
@@ -998,9 +1025,14 @@ drawSurveyBasicAnalysisFigures<-function(){
     #b=findPath(c(1:length(skewPlots[[1]][1,])), t(y1), skewPlotsTransposed, 5, 1, multiple=T, type=1, numPerts=10)
     
     #b=findPath(c(1:length(skewPlots[[1]][1,])), skewPlots[[1]][1,], t(skewPlots[[1]]), 5, 1, multiple=F, type=1, numPerts=10)
+    y_together=cbind(skewPlotsTransposed[[1]][,1], skewPlotsTransposed[[2]][,1], skewPlotsTransposed[[3]][,1], skewPlotsTransposed[[4]][,1])
+    b_skew10=findPathF2(c(1:26), y_together, skewPlotsTransposed, 10, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+    b_skew5=findPathF2(c(1:26), y_together, skewPlotsTransposed, 5, spline=1, numPerts=10000, resampleTraining = F, mult=T)
     
-    b_skew10=findPath(c(1:26), rep(0,26), skewPerturbations, 10, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
-    b_skew5=findPath(c(1:26), rep(0,26), skewPerturbations, 5, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
+   # b_skew10=findPathF1(c(1:26), skewPerturbations, 10, spline=1, numPerts=0, resampleTraining = F)
+   #  b_skew5=findPathF1(c(1:26), skewPerturbations, 5, spline=1, numPerts=0, resampleTraining = F)
+    
+   
     
     plot(c(), xlim=c(0,26), ylim=c(-0.15, 0.15))
     apply(skewPerturbations, 2, function(i){lines(c(1:26), i)})
@@ -1091,8 +1123,13 @@ drawSurveyBasicAnalysisFigures<-function(){
     
     #b=findPath(c(1:length(ampPlots[[1]][1,])), ampPlots[[1]][1,], t(ampPlots[[1]]), 5, 1, multiple=F, type=1, numPerts=10)
     
-    b_amp10=findPath(c(1:26), rep(0,26), ampPerturbations, 10, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
-    b_amp5=findPath(c(1:26), rep(0,26), ampPerturbations, 5, 1, multiple=F, type=1, numPerts=0, resampleTraining = F)
+    #b_amp10=findPathF1(c(1:26), ampPerturbations, 10, spline=1, numPerts=0, resampleTraining = F)
+    #b_amp5=findPathF1(c(1:26), ampPerturbations, 5, spline=1, numPerts=0, resampleTraining = F)
+    
+    y_together=cbind(ampPlotsTransposed[[1]][,1], ampPlotsTransposed[[2]][,1], ampPlotsTransposed[[3]][,1], ampPlotsTransposed[[4]][,1])
+    b_amp10=findPathF2(c(1:26), y_together, ampPlotsTransposed, 10, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+    b_amp5=findPathF2(c(1:26), y_together, ampPlotsTransposed, 5, spline=1, numPerts=10000, resampleTraining = F, mult=T)
+    
     
     plot(c(), xlim=c(0,26), ylim=c(-0.15, 0.15))
     apply(ampPerturbations, 2, function(i){lines(c(1:26), i)})
@@ -1319,9 +1356,9 @@ drawSurveyBasicAnalysisFigures<-function(){
                     # print(k)
                     #  print(control)
                     # print(paste('index', index))
-                    L2(c(1, 1:26, 26), as.numeric(c(k[index[1]], k, k[index[length(index)]])),
-                       as.numeric(c(control[index[1]], control, control[index[length(index)]])), 1, 26, c(1, 1+index, length(index)+1))
-                }))
+                    L2(c(1:26), k,
+                       as.numeric(control), 1, 26, index)
+                    }))
             })
             
         })
@@ -1343,9 +1380,9 @@ drawSurveyBasicAnalysisFigures<-function(){
                     # print(k)
                     #  print(control)
                     # print(paste('index', index))
-                    L2(c(1, 1:26, 26), as.numeric(c(k[index[1]], k, k[index[length(index)]])),
-                       as.numeric(c(control[index[1]], control, control[index[length(index)]])), 1, 26, c(1, 1+index, length(index)+1))
-                }))
+                    L2(c(1:26), k,
+                       as.numeric(control), 1, 26, index)
+                    }))
             })
             
         })
@@ -1368,9 +1405,9 @@ drawSurveyBasicAnalysisFigures<-function(){
                 # print(k)
                 #  print(control)
                 # print(paste('index', index))
-                L2(c(1, 1:26, 26), as.numeric(c(k[index[1]], k, k[index[length(index)]])),
-                   as.numeric(c(control[index[1]], control, control[index[length(index)]])), 1, 26, c(1, 1+index, length(index)+1))
-            }))
+                L2(c(1:26), k,
+                   as.numeric(control), 1, 26, index)
+                }))
             
             
         })
@@ -1399,8 +1436,8 @@ drawSurveyBasicAnalysisFigures<-function(){
                     # print(k)
                     #  print(control)
                     # print(paste('index', index))
-                    L2(c(1, 1:26, 26), as.numeric(c(k[index[1]], k, k[index[length(index)]])),
-                       as.numeric(c(control[index[1]], control, control[index[length(index)]])), 1, 26, c(1, 1+index, length(index)+1))
+                    L2(c(1:26), k,
+                       as.numeric(control), 1, 26, index)
                 }))
             })
             
@@ -1422,9 +1459,9 @@ drawSurveyBasicAnalysisFigures<-function(){
                     # print(k)
                     #  print(control)
                     # print(paste('index', index))
-                    L2(c(1, 1:26, 26), as.numeric(c(k[index[1]], k, k[index[length(index)]])),
-                       as.numeric(c(control[index[1]], control, control[index[length(index)]])), 1, 26, c(1, 1+index, length(index)+1))
-                }))
+                    L2(c(1:26), k,
+                       as.numeric(control), 1, 26, index)
+                    }))
             })
             
         })
@@ -1443,9 +1480,9 @@ drawSurveyBasicAnalysisFigures<-function(){
                 # print(k)
                 #  print(control)
                 # print(paste('index', index))
-                L2(c(1, 1:26, 26), as.numeric(c(k[index[1]], k, k[index[length(index)]])),
-                   as.numeric(c(control[index[1]], control, control[index[length(index)]])), 1, 26, c(1, 1+index, length(index)+1))
-            }))
+                L2(c(1:26), k,
+                   as.numeric(control), 1, 26, index)
+                }))
             
             
         })
@@ -1456,7 +1493,7 @@ drawSurveyBasicAnalysisFigures<-function(){
         sapply(c(1:4), function(j){
             nit=scoreNITPickWithGrant[[i]][j]
             bio=scoreBiologistsWithGrant[[i]][,j]
-            length(which(nit>bio))
+            length(which(nit>bio))/50
         })
     })
     
@@ -1688,7 +1725,6 @@ drawSurveyBasicAnalysisFigures<-function(){
     heatmap(diff[[1]])
     
     
-    ####Now, let us determine whether certain heuristics improve score
     
     
 }
